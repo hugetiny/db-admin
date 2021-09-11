@@ -1,0 +1,11 @@
+[{
+	"menu_id": "dbadmin",
+	"name": "数据库管理",
+	"icon": "uni-icons-list",
+	"url": "uni_modules/db-admin/pages/db",
+	"sort":1050,
+	"parent_id": "system_management",
+	"permission": [],
+	"enable": true
+}]
+

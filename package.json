@@ -1,0 +1,84 @@
+{
+  "id": "db-admin",
+  "displayName": "uniCloud db-admin 数据库管理器",
+  "version": "1.0.1",
+  "description": "简洁明了方便直观的数据库可视化管理，点击直接修改,自动错误检查。支持任意类型改为任意类型。本项目为云数据库控制台的增强版，有特殊需求可请联系作者。",
+  "keywords": [
+    "unicloud-db",
+    "云数据库",
+    "控制台",
+    "uniCloud",
+    "database"
+],
+  "repository": "",
+  "engines": {
+    "HBuilderX": "^3.1.5"
+  },
+  "dcloudext": {
+    "category": [
+        "uniCloud",
+        "Admin插件"
+    ],
+    "sale": {
+      "regular": {
+        "price": "9.00"
+      },
+      "sourcecode": {
+        "price": "0.00"
+      }
+    },
+    "contact": {
+      "qq": "38520338"
+    },
+    "declaration": {
+      "ads": "无",
+      "data": "插件不采集任何数据",
+      "permissions": "无"
+    },
+    "npmurl": ""
+  },
+  "uni_modules": {
+    "dependencies":[],
+    "encrypt": [],
+    "platforms": {
+      "cloud": {
+        "tcb": "y",
+        "aliyun": "y"
+      },
+      "client": {
+        "Vue": {
+          "vue2": "y",
+          "vue3": "y"
+        },
+        "App": {
+          "app-vue": "y",
+          "app-nvue": "y"
+        },
+        "H5-mobile": {
+          "Safari": "y",
+          "Android Browser": "y",
+          "微信浏览器(Android)": "y",
+          "QQ浏览器(Android)": "y"
+        },
+        "H5-pc": {
+          "Chrome": "y",
+          "IE": "u",
+          "Edge": "y",
+          "Firefox": "y",
+          "Safari": "y"
+        },
+        "小程序": {
+          "微信": "u",
+          "阿里": "u",
+          "百度": "u",
+          "字节跳动": "u",
+          "QQ": "u"
+        },
+        "快应用": {
+          "华为": "u",
+          "联盟": "u"
+        }
+      }
+    }
+  }
+}
