@@ -1,8 +1,8 @@
 {
   "id": "db-admin",
   "displayName": "uniCloud db-admin 数据库管理器",
-  "version": "1.0.1",
-  "description": "简洁明了方便直观的数据库可视化管理，点击直接修改,自动错误检查。支持任意类型改为任意类型。本项目为云数据库控制台的增强版，有特殊需求可请联系作者。",
+  "version": "1.1.0",
+  "description": "简洁明了方便直观的数据库可视化管理，点击直接修改,自动错误检查。支持任意类型改为任意类型。本项目为云数据库控制台的增强版，永久开源免费，如有无法实现的需求可联系作者。",
   "keywords": [
     "unicloud-db",
     "云数据库",
@@ -10,9 +10,9 @@
     "uniCloud",
     "database"
 ],
-  "repository": "",
+  "repository": "https://github.com/hugetiny/db-admin",
   "engines": {
-    "HBuilderX": "^3.1.5"
+    "HBuilderX": "^3.1.10"
   },
   "dcloudext": {
     "category": [
@@ -21,7 +21,7 @@
     ],
     "sale": {
       "regular": {
-        "price": "9.00"
+        "price": "0.00"
       },
       "sourcecode": {
         "price": "0.00"

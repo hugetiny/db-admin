@@ -3,19 +3,20 @@
     <view class="uni-header">
       <view class="uni-group">
         <view class="uni-title"></view>
-        <view class="uni-sub-title">共{{ total }}条数据</view>
+        <view class="uni-sub-title">{{ tip }}</view>
       </view>
       <view class="uni-group">
-        <!-- 				<input class="uni-search" type="text" v-model="query" @confirm="search" placeholder="请输入搜索内容" />
-                <button class="uni-button" type="default" size="mini" @click="search">搜索</button> -->
-        <button class="uni-button" type="primary" size="mini" @click="addOne">新建</button>
-        <!--        <switch :checked='switchBool' style="transform:scale(0.5)"-->
-        <!--                 @change="switchBool = !switchBool"/>-->
+        <view class="uni-sub-title">一键修改Boolean类型</view>
+        <switch :checked='switchBool' style="transform:scale(0.5)" @change="switchBool = !switchBool"/>
+        <input class="uni-search" type="text" :value="collectionName" @confirm="load" @blur="load" focus placeholder="输入查询collection"/>
+        <!--                <button class="uni-button" type="default" size="mini" @click="search">搜索</button> -->
+        <!--        <button class="uni-button" type="primary" size="mini" @click="addOne">新建</button>-->
+
         <button class="uni-button" type="warn" size="mini" :disabled="!selectedIndexs.length"
                 @click="delTable">批量删除
         </button>
         <!-- #ifdef H5 -->
-        <download-excel class="hide-on-phone" :data="exportExcelData" :type="exportExcel.type"
+        <download-excel class="hide-on-phone" :data="dataList" :type="exportExcel.type"
                         :name="exportExcel.filename">
           <button class="uni-button" type="primary" size="mini">导出 Excel</button>
         </download-excel>
@@ -23,77 +24,39 @@
       </view>
     </view>
     <view class="uni-container">
-      <unicloud-db ref="udb" getcount :page-size="pageSize" :page-current='pageCurrent' page-data="replace"
+      <unicloud-db ref="udb" orderby="createTime desc" getcount :page-size="pageSize" :page-current='pageCurrent' page-data="replace"
                    @load="onqueryload" v-slot:default="{data,pagination, loading, hasMore, error, options}"
                    :collection="collectionName">
         <uni-table ref="table" :loading="loading" border stripe :type="multiSelect?'selection':''"
                    :emptyText="error.message || '没有更多数据'" @selection-change="selectionChange">
           <uni-tr>
-            <uni-th @sort-change="sortChange" sortable filter-type="filterType"
-                    v-for="(field,fieldindex) in fields" :key="fieldindex">
+            <uni-th @sort-change="sortChange" :sortable="sortable" filter-type="filterType"
+                    v-for="(field,thindex) in fields" :key="thindex">
               {{ field }}
             </uni-th>
             <uni-th>删除</uni-th>
           </uni-tr>
-          <uni-tr v-for="(row, index) in data" :key="index">
-            <uni-td v-for="field in fields" :key="field" :val="row[field]">
-              <!--                    :class="row.errorIndex===valIndex?error:''">-->
-              <!-- Boolean switchBool-->
-              <switch v-if="switchBool===true &&  typeof row[field] === 'boolean'" :checked='row[field]'
-                      style="transform:scale(0.5)" @change="updateOne($event.target.value,index,field)"/>
+          <uni-tr v-for="(row, index) in computedData" :key="index">
+            <uni-td v-for="(field,fieldIndex) in row" :key="fieldIndex">
 
-              <!-- Boolean textarea-->
-              <!--              <textarea  v-else-if="switchBool===false &&  typeof row[field] === 'boolean'" :value="row[field]" auto-blur auto-height-->
-              <!--                         @input="inputCheck($event.target.value,index,field)"-->
-              <!--                         :style="row.error.includes(field)?'color:red':''"-->
-              <!--                         maxlength="-1" @blur="updateOne($event.target.value,index,field)"-->
-              <!--                         @confirm=" updateOne($event.target.value,index,field)"/>-->
+              <!-- common -->
+              <textarea v-if="field.type!=='switchBool'"
+                        :disabled="field.disabled"
+                        :value="field.val"
+                        :style="errorTds.includes(index + field.key)?{color:'red'}:{}"
+                        auto-blur
+                        auto-height
+                        maxlength="-1"
+                        @input="inputCheck($event.target.value,index,field.key)"
+                        @blur="editOne($event.target.value,index,field.key)"
+                        @confirm=" editOne($event.target.value,index,field.key)"
+              />
+              <!--              errorTds.includes(index+field)?'color:red':''-->
+              <!-- switchBool-->
+              <switch v-else-if="field.type==='switchBool'" :checked="field.val==='true'" style="transform:scale(0.5)"
+                      @change="editOne($event.target.value,index,field.key)"/>
 
 
-              <!-- Number -->
-              <textarea v-else-if="typeof(row[field])==='number'" :value="row[field]" auto-blur
-                        auto-height maxlength="-1" @input="inputCheck($event.target.value,index,field)"
-                        @blur="updateOne($event.target.value,index,field)"
-                        @confirm=" updateOne($event.target.value,index,field)"
-                        :style="errorTds.includes(index+field)?'color:red':''"/>
-              <!-- String -->
-              <textarea v-else-if="typeof(row[field])==='string'" :value="`&quot;${row[field]}&quot;`"
-                        auto-blur auto-height maxlength="-1"
-                        @input="inputCheck($event.target.value,index,field)"
-                        @blur=" updateOne($event.target.value,index,field)"
-                        @confirm=" updateOne($event.target.value,index,field)"
-                        :style="errorTds.includes(index+field)?'color:red':''"/>
-
-              <!--null-->
-              <textarea v-else-if="row[field]===null" :value="row[field]" auto-blur auto-height
-                        @input="inputCheck($event.target.value,index,field)" maxlength="-1"
-                        @blur="updateOne($event.target.value,index,field)"
-                        @confirm=" updateOne($event.target.value,index,field)"
-                        :style="errorTds.includes(index+field)?'color:red':''"/>
-
-              <!-- Array -->
-              <textarea v-else-if="Array.isArray(row[field])" :value="JSON.stringify(row[field],null,2)"
-                        auto-blur auto-height maxlength="-1"
-                        @input="inputCheck($event.target.value,index,field)"
-                        @blur="updateOne($event.target.value,index,field)"
-                        @confirm=" updateOne($event.target.value,index,field)"
-                        :style="errorTds.includes(index+field)?'color:red':''"/>
-
-              <!-- Object -->
-              <textarea v-else-if="row[field] instanceof Object"
-                        :disabled="Object.keys(row[field]).includes('_value')"
-                        :value="JSON.stringify(row[field],null,2)" auto-blur auto-height maxlength="-1"
-                        @input="inputCheck($event.target.value,index,field)"
-                        @blur="updateOne($event.target.value,index,field)"
-                        @confirm=" updateOne($event.target.value,index,field)"
-                        :style="errorTds.includes(index+field)?'color:red':''"/>
-
-              <!-- 本不存在 -->
-              <textarea v-else="" placeholder="不存在" placeholder-style="color:#ddd" auto-blur auto-height
-                        maxlength="-1" @input="inputCheck($event.target.value,index,field)"
-                        @blur="updateOne($event.target.value,index,field)"
-                        @confirm=" updateOne($event.target.value,index,field)"
-                        :style="errorTds.includes(index+field)?'color:red':''"/>
             </uni-td>
             <uni-td v-if="selected.length===0">
               <uni-icons @click="deleteOne(row._id)" type="trash" size="14"></uni-icons>
@@ -124,24 +87,24 @@
 
 <script>
 import equal from '../equal'
-import config from '../config'
 
-const db = uniCloud.database()
+
 export default {
   data() {
     return {
       pageCurrent: 1,
       pageSizeIndex: 0,
-      pageSizeOption: [20, 50, 100, 500],
+      //TODO  暂时无法切换，显示100条
+      pageSizeOption: [20,50,100],
       multiSelect: true,
-      collectionName: config.collections.toString(),
+      collectionName: '',
       funcName: 'Delete',
-      // sortable: true,
+      sortable: false,
       filterType: 'search', //search/select/range/date
       filterData: [], //select
       selected: [],
       selectedIndexs: [],
-      exportExcelData: [],
+      dataList: [],
       fields: [],
       // values: [],
       switchBool: true,
@@ -158,6 +121,61 @@ export default {
   //   })
   // },
   computed: {
+    computedData() {
+      return this.$refs.udb.dataList.map((data, index) => {
+        const row = []
+        this.fields.forEach(field => {
+          const fieldVal = data[field]
+          if (fieldVal === undefined) {
+            row.push({key:field,val: undefined, type: 'undefined', disabled: false})
+
+          } else if (typeof fieldVal === 'boolean') {
+            if (this.switchBool === true) {
+              row.push({key:field,val: fieldVal.toString(), type: 'switchBool', disabled: false})
+            } else {
+              row.push({key:field,val: fieldVal.toString(), type: 'textBool', disabled: false})
+            }
+
+          } else if (typeof (fieldVal) === 'number') {
+
+            if (field === "_id") {
+              row.push({key:field,val: fieldVal, type: 'number', disabled: true})
+            } else {
+              row.push({key:field,val: fieldVal, type: 'number', disabled: false})
+            }
+          } else if (typeof (fieldVal) === 'string') {
+
+            if (field === "_id") {
+              row.push({key:field,val: `"${fieldVal}"`, type: 'string', disabled: true})
+            } else {
+              row.push({key:field,val: `"${fieldVal}"`, type: 'string', disabled: false})
+            }
+          } else if (fieldVal === null) {
+            row.push({key:field,val: null, type: 'null', disabled: false})
+          } else if (Array.isArray(fieldVal)) {
+            row.push({key:field,val: JSON.stringify(fieldVal, null, 2), type: 'array', disabled: false})
+          } else if (fieldVal instanceof Object) {
+
+            if (Object.keys(fieldVal).includes('_value')) {
+              row.push({key:field,val: JSON.stringify(fieldVal, null, 2), type: 'object', disabled: true})
+            } else {
+              row.push({key:field,val: JSON.stringify(fieldVal, null, 2), type: 'object', disabled: false})
+            }
+          }
+          //style
+          // if (this.errorTds.includes(index + field)) {
+          //   row[index].style = {color: 'red'}
+          // } else {
+          //   row[index].style = {}
+          // }
+        })
+        return row
+      })
+    },
+    tip() {
+      return `共${this.total}条数据`
+
+    },
     pageSize() {
       return this.pageSizeOption[this.pageSizeIndex]
     },
@@ -172,23 +190,24 @@ export default {
   //   console.log(config.collections.toString())
   // },
   methods: {
+
     onqueryload(data, ended, pagination) {
       this.total = pagination.count
+      //unicloud-db 500条限制
       // if (pagination.count > 500) {
       //   this.pageSizeOption = [20, 50, 100, 500, pagination.count]
       // } else {
       //   this.pageSizeOption = [20, 50, 100, 500]
       // }
 
+      //计算field
       const s = new Set
       for (let i = 0; i < data.length; i++) {
         const keys = Object.keys(data[i])
         keys.forEach(field => s.add(field))
       }
       this.fields = Array.from(s)
-      this.exportExcelData = data
-      //TODO 所有数据条数
-
+      // this.dataList = data
 
     },
     // onqueryerror(e) {
@@ -197,6 +216,13 @@ export default {
     onpagination(e) {
       this.$refs.udb.loadData({
         current: e.current
+      })
+    },
+
+    load(e) {
+      this.collectionName = e.target.value
+      this.$nextTick(() => {
+        this.$refs.udb.loadData()
       })
     },
     inputCheck(val, index, field) {
@@ -216,8 +242,10 @@ export default {
       try {
         if (val === '') {
           val = null
-        } else if (val === true || val === false) {
-
+        } else if (val === 'true' || val ===true) {
+          val = true
+        } else if (val === 'false' || val ===false) {
+          val = false
         } else if (val.startsWith('"') && val.endsWith('"') || val.startsWith("'") && val.endsWith("'")) {
           val = val.substring(1, val.length - 1);
         } else if (val == parseFloat(val)) {
@@ -282,8 +310,7 @@ export default {
     },
     // 多选处理
     selectedItems() {
-      var dataList = this.$refs.udb.dataList
-      return this.selectedIndexs.map(i => dataList[i]._id)
+      return this.selectedIndexs.map(i => this.$refs.udb.dataList[i]._id)
     },
     // 批量删除
     delTable() {
@@ -302,17 +329,19 @@ export default {
     },
     changeSize(e) {
       this.pageSizeIndex = e.detail.value
+      // console.log(this.pageSize)
       this.$nextTick(() => {
         this.loadData()
       })
 
     },
-    updateOne(val, index, field) {
-      if (this.allowedCheck(val) === undefined) {
+    editOne(val, index, field) {
+      val = this.allowedCheck(val)
+      if (val === undefined) {
         return
-      } else {
-        val = this.allowedCheck(val)
       }
+      console.log(this.$refs.udb.dataList[index][field])
+      console.log(val)
       if (equal(this.$refs.udb.dataList[index][field], val)) {
         return
       }
@@ -322,36 +351,25 @@ export default {
       if (field !== '_id') {
         const o = {}
         o[field] = val
-        this.$refs.udb.update(this.$refs.udb.dataList[index]['_id'], o)
-        //TODO 存在
-      } else if (field === '_id') {
-        uni.showModal({
-          title: '_id不建议修改只能新建',
-          content: `是否新建_id为 ${val} 的数据`,
+        console.log(o)
+        // this.$refs.udb.update(this.$refs.udb.dataList[index]['_id'], o)
+        this.$refs.udb.update(this.$refs.udb.dataList[index]['_id'], o, {
+          toastTitle: '修改成功',
           success: (res) => {
-            if (res.confirm) {
-              uni.showLoading()
-              db.collection(config.collections[0]).add({_id:val,desc:null}).then(res => {
-                uni.showToast({
-                  title: '新建成功',
-                  content:res
-                })
-              }).catch((err) => {
-                uni.showModal({
-                  content: err.message || '请求服务失败',
-                  showCancel: false
-                })
-              }).finally(() => {
-                uni.hideLoading()
-              })
-            }
-            // this.$refs.udb.add({_id:val}, {
-            //   needConfirm: true
-            // })
+            this.$refs.udb.dataList[index][field]=val
+          },
+          fail: (err) => {
+        this.loadData(false)
+
+            // this.errorTds.push(index + field)
           }
+
         })
-        this.errorTds.push(index + field)
-        //TODO unicloud-db官方限制不能传_id
+        // this.$nextTick(() => {
+        //   this.loadData(false)
+        // })
+      } else if (field === '_id') {
+        //TODO unicloud-db官方限制不能传_id暂时不允许修改
       }
     }
   }
